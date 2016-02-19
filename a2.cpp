@@ -18,11 +18,55 @@
 using namespace cimg_library;
 using namespace std;
 
+double matrix_3x3_determinant(vector< vector<double> > &M)
+{
+	return 	M[0][0]*(M[1][1]*M[2][2]-M[1][2]*M[2][1]) +
+				M[0][1]*(M[1][2]*M[2][0]-M[1][0]*M[2][2]) + 
+					M[0][2]*(M[1][0]*M[2][1]-M[1][1]*M[2][0]);
+}
+
+vector< vector<double> > matrix_3x3_inverse(vector< vector<double> > &M)
+{
+	double det = matrix_3x3_determinant(M);
+	if ( abs(det) < 0.0000001 )
+	{
+		cout << "Cannot inverse matrix with determinant zero!!!" << endl;
+		exit(1);
+	}
+
+	vector< vector<double> > R(3, vector<double>(3));
+	R[0][0] = (M[1][1]*M[2][2]-M[1][2]*M[2][1])/det;
+	R[0][1] = (M[0][2]*M[2][1]-M[0][1]*M[2][2])/det;
+	R[0][2] = (M[0][1]*M[1][2]-M[0][2]*M[1][1])/det;
+	R[1][0] = (M[1][2]*M[2][0]-M[1][0]*M[2][2])/det;
+	R[1][1] = (M[0][0]*M[2][2]-M[0][2]*M[2][0])/det;
+	R[1][2] = (M[0][2]*M[1][0]-M[0][0]*M[1][2])/det;
+	R[2][0] = (M[1][0]*M[2][1]-M[1][1]*M[2][0])/det;
+	R[2][1] = (M[0][1]*M[2][0]-M[0][0]*M[2][1])/det;
+	R[2][2] = (M[0][0]*M[1][1]-M[0][1]*M[1][0])/det;
+
+	return R;
+}
+
+CImg<double> transform_image(CImg<double> &input_image, vector< vector<double> > &M)
+{	
+	vector< vector<double> > R = matrix_3x3_inverse(M);
+
+	CImg<double> output_image(input_image.width(), input_image.height(), 1, 3, 0);
+	for (int i = 0; i < input_image.width(); ++i)
+		for(int j = 0; j < input_image.height(); ++j)
+			for (int p = 0; p < 3; ++p)
+				output_image(i, j, 0, p) = input_image(i, j, 0, p);
+
+	//output_image.save("test.png");
+	return output_image;
+}
+
 
 int main(int argc, char **argv)
 {
-	try {
-
+	try 
+	{
 		if(argc < 2)
 		{
 			cout << "Insufficent number of arguments; correct usage:" << endl;
@@ -54,10 +98,9 @@ int main(int argc, char **argv)
 				for(int j=0; j<5; j++)
 					for(int k=0; k<5; k++)
 						if(j==2 || k==2)
-							for(int p=0; p<3; p++)
-								//input_image(descriptors[i].col+k, descriptors[i].row+j, 0, p) = 0;					
+							for(int p=0; p<3; p++)								
 			                    if(descriptors[i].col+k < input_image.width() && descriptors[i].row+j < input_image.height())
-            				        input_image(descriptors[i].col+k, descriptors[i].row+j, 0, p)=0;
+            				        input_image(descriptors[i].col+k, descriptors[i].row+j, 0, p) = 0;
 
 			}
 
@@ -65,7 +108,14 @@ int main(int argc, char **argv)
 		}
 		else if(part == "part2")
 		{
-			// do something here!
+			CImg<double> input_image(inputFile.c_str());
+
+			vector< vector<double> > M(3, vector<double>(3));
+			M[0][0] = 0.907; 		M[0][1] = 0.258; 		M[0][2] = -182;
+			M[1][0] = -0.153; 		M[1][1] = 1.44; 		M[1][2] = 58;
+			M[2][0] = -0.000306; 	M[2][1] = 0.000731; 	M[2][2] = 1;
+
+			transform_image(input_image, M);
 		}
 		else
 			throw std::string("unknown part!");
@@ -73,7 +123,8 @@ int main(int argc, char **argv)
 		// feel free to add more conditions for other parts (e.g. more specific)
 		//  parts, for debugging, etc.
 	}
-	catch(const string &err) {
+	catch(const string &err)
+	{
 		cerr << "Error: " << err << endl;
 	}
 }
