@@ -53,12 +53,22 @@ CImg<double> transform_image(CImg<double> &input_image, vector< vector<double> >
 	vector< vector<double> > R = matrix_3x3_inverse(M);
 
 	CImg<double> output_image(input_image.width(), input_image.height(), 1, 3, 0);
-	for (int i = 0; i < input_image.width(); ++i)
-		for(int j = 0; j < input_image.height(); ++j)
-			for (int p = 0; p < 3; ++p)
-				output_image(i, j, 0, p) = input_image(i, j, 0, p);
+	double w;
+	int xsource, ysource;
 
-	//output_image.save("test.png");
+	for (int x = 0; x < output_image.width(); ++x)
+	{
+		for(int y = 0; y < output_image.height(); ++y)
+		{
+			w = x*R[2][0]+y*R[2][1]+R[2][2];
+			xsource = int( (x*R[0][0]+y*R[0][1]+R[0][2]) / w);
+			ysource = int( (x*R[1][0]+y*R[1][1]+R[1][2]) / w);
+
+			for (int p = 0; p < 3; ++p)			
+				if (!(xsource < 0 || ysource < 0 || xsource >= input_image.width() || ysource >= input_image.height()))
+					output_image(x, y, 0, p) = input_image(xsource, ysource, 0, p);			
+		}
+	}
 	return output_image;
 }
 
@@ -115,7 +125,8 @@ int main(int argc, char **argv)
 			M[1][0] = -0.153; 		M[1][1] = 1.44; 		M[1][2] = 58;
 			M[2][0] = -0.000306; 	M[2][1] = 0.000731; 	M[2][2] = 1;
 
-			transform_image(input_image, M);
+			CImg<double> trans_image = transform_image(input_image, M);
+			trans_image.save("transformed.png");
 		}
 		else
 			throw std::string("unknown part!");
