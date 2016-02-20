@@ -86,6 +86,7 @@ int main(int argc, char **argv)
 
 		string part = argv[1];
 		string inputFile = argv[2];
+		string inputfile2 = argv[3];
 
 		if(part == "part1")
 		{
@@ -97,7 +98,11 @@ int main(int argc, char **argv)
 			// convert image to grayscale
 			CImg<double> gray = input_image.get_RGBtoHSI().get_channel(2);
 			vector<SiftDescriptor> descriptors = Sift::compute_sift(gray);
-
+			
+			cout <<"Desc size"<< descriptors.size();
+			cout << "desc 1" << descriptors[1].descriptor[1];
+			cout << endl;
+			cout << endl;
 			for(int i=0; i<descriptors.size(); i++)
 			{
 				cout << "Descriptor #" << i << ": x=" << descriptors[i].col << " y=" << descriptors[i].row << " descriptor=(";
@@ -113,8 +118,34 @@ int main(int argc, char **argv)
             				        input_image(descriptors[i].col+k, descriptors[i].row+j, 0, p) = 0;
 
 			}
-
 			input_image.get_normalize(0,255).save("sift.png");
+			
+			CImg<double> input_image1(inputfile2.c_str());
+			// convert image to grayscale
+			CImg<double> gray1 = input_image1.get_RGBtoHSI().get_channel(2);
+			vector<SiftDescriptor> descriptors1 = Sift::compute_sift(gray1);
+			
+			cout <<"Desc size"<< descriptors1.size();
+			cout << "desc 1" << descriptors1[1].descriptor[1];
+			cout << endl;
+			cout << endl;
+			for(int i=0; i<descriptors1.size(); i++)
+			{
+				cout << "Descriptor #" << i << ": x=" << descriptors1[i].col << " y=" << descriptors1[i].row << " descriptor=(";
+				for(int l=0; l<128; l++)
+					cout << descriptors1[i].descriptor[l] << "," ;
+				cout << ")" << endl;
+
+				for(int j=0; j<5; j++)
+					for(int k=0; k<5; k++)
+						if(j==2 || k==2)
+							for(int p=0; p<3; p++)								
+			                    if(descriptors1[i].col+k < input_image1.width() && descriptors1[i].row+j < input_image1.height())
+            				        input_image1(descriptors[i].col+k, descriptors[i].row+j, 0, p) = 0;
+
+			}
+			input_image1.get_normalize(0,255).save("sift1.png");
+			
 		}
 		else if(part == "part2")
 		{
