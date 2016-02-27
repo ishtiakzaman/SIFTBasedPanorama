@@ -125,7 +125,7 @@ CImg<double> ransac(vector< pair< pair<int,int>, pair<int,int> > > &matches, int
 }
 
 vector< pair< pair<int,int>, pair<int,int> > > get_sift_matches(CImg<unsigned char> &image1, CImg<unsigned char> &image2,
-																int threshold1=200, double threshold2=0.9)
+																int threshold1, double threshold2)
 {
 	vector< pair< pair<int,int>, pair<int,int> > > matches;	
 
@@ -246,7 +246,7 @@ CImg<unsigned char> create_panorama(CImg<unsigned char> &image1, CImg<unsigned c
 	}
 	image3.save("image3.png");
 
-	CImg<double> T = ransac(matches, 5000, thresh3);	
+	CImg<double> T = ransac(matches, 500, thresh3);	
 
 	// Find the boundary we will get after stitching two images
 	int minx = 0, miny = 0, maxx = image1.width(), maxy = image1.height();
