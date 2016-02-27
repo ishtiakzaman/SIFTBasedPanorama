@@ -124,117 +124,8 @@ CImg<double> ransac(vector< pair< pair<int,int>, pair<int,int> > > &matches, int
 	return T_best;
 }
 
-/*
 vector< pair< pair<int,int>, pair<int,int> > > get_sift_matches(CImg<unsigned char> &image1, CImg<unsigned char> &image2,
-																int threshold1, double threshold2)
-{
-	vector< pair< pair<int,int>, pair<int,int> > > matches;	
-
-	CImg<double> gray1 = image1.get_RGBtoHSI().get_channel(2);
-	vector<SiftDescriptor> descriptors1 = Sift::compute_sift(gray1);
-
-	for(int i=0; i<descriptors1.size(); i++)
-	{
-		for(int j=0; j<5; j++)
-			for(int k=0; k<5; k++)
-				if(j==2 || k==2)
-					for(int p=0; p<3; p++)								
-	                    if(descriptors1[i].col+k < image1.width() && descriptors1[i].row+j < image1.height())
-    				        image1(descriptors1[i].col+k, descriptors1[i].row+j, 0, p) = 0;
-
-	}	
-
-	CImg<double> gray2 = image2.get_RGBtoHSI().get_channel(2);
-	vector<SiftDescriptor> descriptors2 = Sift::compute_sift(gray2);
-	for(int i=0; i<descriptors2.size(); i++)
-	{
-		for(int j=0; j<5; j++)
-			for(int k=0; k<5; k++)
-				if(j==2 || k==2)
-					for(int p=0; p<3; p++)								
-	                    if(descriptors2[i].col+k < image2.width() && descriptors2[i].row+j < image2.height())
-    				        image2(descriptors2[i].col+k, descriptors2[i].row+j, 0, p) = 0;
-
-	}	
-
-	vector<vector<int> > flag_matrix(descriptors1.size(), vector<int>(descriptors2.size(), false));
-
-	int best_match_index;
-	int best_match_value, second_best_match_value;
-
-	for (int pass = 0; pass < 2; ++pass)
-	{
-		for(int i = 0; i < (pass?descriptors2.size():descriptors1.size()); i++)
-		{
-			best_match_value = threshold1*threshold1;
-			second_best_match_value = threshold1*threshold1;
-			best_match_index = -1;			
-
-			for(int j = 0; j < (pass?descriptors1.size():descriptors2.size()); j++)
-			{
-				int distance = 0;
-				for(int l = 0; l < 128; l++)
-				{
-					int d;
-					if (pass == 0)
-						d = descriptors1[i].descriptor[l] - descriptors2[j].descriptor[l];
-					else
-						d = descriptors2[i].descriptor[l] - descriptors1[j].descriptor[l];
-					distance += d * d;
-
-					if (distance > second_best_match_value)
-						break;
-				}			
-
-				if (distance < best_match_value)
-				{
-					if (best_match_index != -1)				
-						second_best_match_value = best_match_value;									
-
-					best_match_value = distance;
-					best_match_index = j;
-				}
-				else if (distance < second_best_match_value)
-				{
-					second_best_match_value = distance;				
-				}
-			}
-
-			if (best_match_index != -1)
-			{
-				if (10 * 10 * best_match_value < threshold2 * threshold2 * second_best_match_value)
-				{
-					if (pass == 0)							
-						flag_matrix[i][best_match_index]++;		
-					else
-						flag_matrix[best_match_index][i]++;
-				}
-			}
-		}
-	}
-
-	for(int i = 0; i < descriptors1.size(); i++)	
-		for(int j = 0; j < descriptors2.size(); j++)
-			//if (flag_matrix[i][j] == 2)
-			if (flag_matrix[i][j] > 0)
-			{
-				int x1, y1, x2, y2;
-				x1 = descriptors1[i].col;
-				y1 = descriptors1[i].row;
-				x2 = descriptors2[j].col;
-				y2 = descriptors2[j].row;
-
-				matches.push_back(make_pair(make_pair(x1,y1),make_pair(x2,y2)));
-			}
-
-
-	return matches;
-		
-}
-*/
-
-vector< pair< pair<int,int>, pair<int,int> > > get_sift_matches(CImg<unsigned char> &image1, CImg<unsigned char> &image2,
-																int threshold1, double threshold2)
+																int threshold1=200, double threshold2=0.9)
 {
 	vector< pair< pair<int,int>, pair<int,int> > > matches;	
 
@@ -244,7 +135,7 @@ vector< pair< pair<int,int>, pair<int,int> > > get_sift_matches(CImg<unsigned ch
 	CImg<double> gray2 = image2.get_RGBtoHSI().get_channel(2);
 	vector<SiftDescriptor> descriptors2 = Sift::compute_sift(gray2);
 
-	vector<vector<int> > flag_matrix(descriptors1.size(), vector<int>(descriptors2.size(), 0));
+	vector<vector<int> > flag_matrix(descriptors1.size(), vector<int>(descriptors2.size(), -1));
 
 	int best_match_index;
 	int best_match_value, second_best_match_value;
@@ -286,7 +177,7 @@ vector< pair< pair<int,int>, pair<int,int> > > get_sift_matches(CImg<unsigned ch
 		{
 			if (10 * 10 * best_match_value < threshold2 * threshold2 * second_best_match_value)
 			{
-				flag_matrix[i][best_match_index] = 1;						
+				flag_matrix[i][best_match_index] = best_match_value;						
 			}
 		}
 	}
@@ -299,16 +190,10 @@ vector< pair< pair<int,int>, pair<int,int> > > get_sift_matches(CImg<unsigned ch
 
 		for(int j = 0; j < descriptors1.size(); j++)
 		{
-			if (flag_matrix[j][i] == 0)
+			if (flag_matrix[j][i] == -1)
 				continue;
 
-			int distance = 0;
-			for(int l = 0; l < 128; l++)
-			{
-				int d;
-				d = descriptors2[i].descriptor[l] - descriptors1[j].descriptor[l];
-				distance += d * d;
-			}			
+			int distance = flag_matrix[j][i];
 
 			if (distance < best_match_value)
 			{				
@@ -342,7 +227,6 @@ CImg<unsigned char> create_panorama(CImg<unsigned char> &image1, CImg<unsigned c
 	matches = get_sift_matches(image1, image2, thresh1, thresh2);	
 
 	cout << "SIFT: " << matches.size() << " matches found." << endl;
-
 	
 	CImg<unsigned char> image3(image1.width()+image2.width(), max(image1.height(), image2.height()), 1, 3, 0);
 	for (int x = 0; x < image1.width(); ++x)
@@ -362,7 +246,7 @@ CImg<unsigned char> create_panorama(CImg<unsigned char> &image1, CImg<unsigned c
 	}
 	image3.save("image3.png");
 
-	CImg<double> T = ransac(matches, 500, thresh3);	
+	CImg<double> T = ransac(matches, 5000, thresh3);	
 
 	// Find the boundary we will get after stitching two images
 	int minx = 0, miny = 0, maxx = image1.width(), maxy = image1.height();
@@ -385,17 +269,17 @@ CImg<unsigned char> create_panorama(CImg<unsigned char> &image1, CImg<unsigned c
 	CImg<unsigned char> output_image = transform_image(image2, T, minx, miny, maxx, maxy);
 	for (int x = 0; x < image1.width(); ++x)
 		for (int y = 0; y < image1.height(); ++y)
-		{			
+		{
 			if (output_image(x-minx, y-miny, 0, 0) + output_image(x-minx, y-miny, 0, 1) + output_image(x-minx, y-miny, 0, 2) == 0)
 			{
-				for(int p=0; p<3; p++)						
+				for(int p=0; p<3; p++)				
 					output_image(x-minx, y-miny, 0, p) = image1(x, y, 0, p);
 			}
 			else
 			{
 				for(int p=0; p<3; p++)						
 					output_image(x-minx, y-miny, 0, p) = (output_image(x-minx, y-miny, 0, p) + image1(x, y, 0, p) ) / 2;
-			}		
+			}	
 		}
 
 	return output_image;
@@ -456,7 +340,7 @@ int main(int argc, char **argv)
 			cout << "desc 1" << descriptors1[1].descriptor[1];
 			cout << endl;
 			cout << endl;
-			for(int i=0; i<descriptors1.size(); i++)
+			for(int i = 0; i < descriptors1.size(); i++)
 			{
 				cout << "Descriptor #" << i << ": x=" << descriptors1[i].col << " y=" << descriptors1[i].row << " descriptor=(";
 				for(int l=0; l<128; l++)
@@ -483,8 +367,7 @@ int main(int argc, char **argv)
 				CImg<unsigned char> image2(argv[i]);
 				CImg<unsigned char> panorama = create_panorama(image1, image2);
 				string output_name = string(argv[i]);
-				output_name.insert(output_name.find("."), "_warped");
-				//output_name = "panorama.jpg";				
+				output_name.insert(output_name.find("."), "_warped");				
 				panorama.save(output_name.c_str());
 			}
 			
@@ -524,11 +407,3 @@ int main(int argc, char **argv)
 		cerr << "Error: " << err << endl;
 	}
 }
-
-
-
-
-
-
-
-
