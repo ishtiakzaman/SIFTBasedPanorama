@@ -20,7 +20,9 @@
 using namespace cimg_library;
 using namespace std;
 
-// Transform image using inverse warping
+/*
+Transform image using inverse warping
+*/
 CImg<unsigned char> transform_image(CImg<unsigned char> &input_image, CImg<double> &M,
 											int minx=0, int miny=0, int maxx=0, int maxy=0)
 {	
@@ -52,6 +54,10 @@ CImg<unsigned char> transform_image(CImg<unsigned char> &input_image, CImg<doubl
 	return output_image;
 }
 
+/*
+Find best transformation from point2 to point1 using RANSAC method
+threshold - max pixel distance allowed in RANSAC transformation
+*/
 CImg<double> ransac(vector< pair< pair<int,int>, pair<int,int> > > &matches, int steps, double threshold)
 {
 	int n = matches.size(), index, max_inliers = -1;
@@ -124,6 +130,11 @@ CImg<double> ransac(vector< pair< pair<int,int>, pair<int,int> > > &matches, int
 	return T_best;
 }
 
+/*
+Find sift matches between two images
+threshold1 - max euclidian distance allowed
+threshold2 - minimum ratio*10.0 between closest match and second closest match allowed
+*/
 vector< pair< pair<int,int>, pair<int,int> > > get_sift_matches(CImg<unsigned char> &image1, CImg<unsigned char> &image2,
 																int threshold1, double threshold2)
 {
@@ -218,12 +229,19 @@ vector< pair< pair<int,int>, pair<int,int> > > get_sift_matches(CImg<unsigned ch
 		
 }
 
-CImg<unsigned char> create_panorama(CImg<unsigned char> &image1, CImg<unsigned char> &image2,
+/*
+Create a warped and panorama by combining image1 and image2
+thresh1 - max euclidian distance allowed is SIFT matching
+thresh2 - minimum ratio*10.0 between closest match and second closest match allowed in SIFT matching
+thresh3 - max pixel distance allowed in RANSAC transformation
+*/
+pair<CImg<unsigned char>,CImg<unsigned char> >create_warped_panorama(CImg<unsigned char> &image1, CImg<unsigned char> &image2,
 											int thresh1=200, double thresh2=9.0, double thresh3=10.0)
 {
 	double x1, y1, w;
 	int x, y;
 	vector< pair< pair<int,int>, pair<int,int> > > matches;
+
 	matches = get_sift_matches(image1, image2, thresh1, thresh2);	
 
 	cout << "SIFT: " << matches.size() << " matches found." << endl;
@@ -244,9 +262,9 @@ CImg<unsigned char> create_panorama(CImg<unsigned char> &image1, CImg<unsigned c
 	{
  		image3.draw_line(matches[i].first.first, matches[i].first.second, matches[i].second.first+image1.width(), matches[i].second.second, color);
 	}
-	image3.save("image3.png");
-
-	CImg<double> T = ransac(matches, 500, thresh3);	
+	image3.save("image3.png");	
+	
+	CImg<double> T = ransac(matches, 1000, thresh3);
 
 	// Find the boundary we will get after stitching two images
 	int minx = 0, miny = 0, maxx = image1.width(), maxy = image1.height();
@@ -266,23 +284,24 @@ CImg<unsigned char> create_panorama(CImg<unsigned char> &image1, CImg<unsigned c
 		if (y > maxy) maxy = y;
 	}		
 
-	CImg<unsigned char> output_image = transform_image(image2, T, minx, miny, maxx, maxy);
+	CImg<unsigned char> warped_image = transform_image(image2, T, minx, miny, maxx, maxy);
+	CImg<unsigned char> panorama_image = warped_image;
 	for (int x = 0; x < image1.width(); ++x)
 		for (int y = 0; y < image1.height(); ++y)
 		{
-			if (output_image(x-minx, y-miny, 0, 0) + output_image(x-minx, y-miny, 0, 1) + output_image(x-minx, y-miny, 0, 2) == 0)
+			if (panorama_image(x-minx, y-miny, 0, 0) + panorama_image(x-minx, y-miny, 0, 1) + panorama_image(x-minx, y-miny, 0, 2) == 0)
 			{
 				for(int p=0; p<3; p++)				
-					output_image(x-minx, y-miny, 0, p) = image1(x, y, 0, p);
+					panorama_image(x-minx, y-miny, 0, p) = image1(x, y, 0, p);
 			}
 			else
 			{
 				for(int p=0; p<3; p++)						
-					output_image(x-minx, y-miny, 0, p) = (output_image(x-minx, y-miny, 0, p) + image1(x, y, 0, p) ) / 2;
+					panorama_image(x-minx, y-miny, 0, p) = (panorama_image(x-minx, y-miny, 0, p) + image1(x, y, 0, p) ) / 2;
 			}	
 		}
 
-	return output_image;
+	return make_pair(warped_image, panorama_image);
 }
 
 
@@ -290,7 +309,7 @@ int main(int argc, char **argv)
 {
 	try 
 	{
-		if(argc < 2)
+		if(argc < 4)
 		{
 			cout << "Insufficent number of arguments; correct usage:" << endl;
 			cout << "    a2-p1 part_id ..." << endl;
@@ -360,47 +379,28 @@ int main(int argc, char **argv)
 		}
 		else if(part == "part2")
 		{
-			CImg<unsigned char> image1(inputFile.c_str());
+			CImg<unsigned char> image1(argv[2]);
 
 			for (int i = 3; i < argc; ++i)
 			{
 				CImg<unsigned char> image2(argv[i]);
-				CImg<unsigned char> panorama = create_panorama(image1, image2);
+				cout << "Processing image: " << argv[i] << endl;
+				pair<CImg<unsigned char>, CImg<unsigned char> > warped_panorama = create_warped_panorama(image1, image2);
 				string output_name = string(argv[i]);
-				output_name.insert(output_name.find("."), "_warped");				
-				panorama.save(output_name.c_str());
+				output_name.insert(output_name.find("."), "_warped");					
+				(warped_panorama.first).save(output_name.c_str());
+				cout << "Generated warped image: "	<< output_name << endl;
+				output_name = string(argv[i]);
+				output_name.insert(output_name.find("."), "_panorama");				
+				(warped_panorama.second).save(output_name.c_str());
+				cout << "Generated panorama image: " << output_name << endl;
+				cout << endl;
 			}
 			
-		}
-		else if(part == "part3") // fine tuning purpose
-		{			
-			CImg<unsigned char> image1(inputFile.c_str());
-			CImg<unsigned char> image2(argv[3]);
-
-			string sthreshold1 = argv[4];
-			string sthreshold2 = argv[5];
-			string sthreshold3 = argv[6];
-
-			int thresh1;
-			double thresh2, thresh3;
-
-			istringstream iss1(sthreshold1);
-			iss1 >> thresh1;
-
-			istringstream iss2(sthreshold2);
-			iss2 >> thresh2;
-
-			istringstream iss3(sthreshold3);
-			iss3 >> thresh3;
-
-			CImg<unsigned char> panorama = create_panorama(image1, image2, thresh1, thresh2, thresh3);
-			panorama.save("panorama.png");
-		}
+		}		
 		else
 			throw std::string("unknown part!");
 
-		// feel free to add more conditions for other parts (e.g. more specific)
-		//  parts, for debugging, etc.
 	}
 	catch(const string &err)
 	{
