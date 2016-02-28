@@ -8,13 +8,14 @@
 //Link to the header file
 #include "CImg.h"
 #include <ctime>
+#include <math.h>
 #include <iostream>
-#include <sstream>
 #include <stdlib.h>
 #include <string>
 #include <vector>
-#include <utility>
-#include <Sift.h>
+#include "Sift.h"
+#include <time.h>
+typedef pair<string,int> Pair;
 
 //Use the cimg namespace to access the functions easily
 using namespace cimg_library;
@@ -304,82 +305,406 @@ pair<CImg<unsigned char>,CImg<unsigned char> >create_warped_panorama(CImg<unsign
 	return make_pair(warped_image, panorama_image);
 }
 
+int SIFT_match(CImg<double> img1, CImg<double> img2, float threshold2, int question)
+{
+int threshold1 = 200;
+int counter = 0;
+int x, y, xp, yp;	
+
+vector< pair< pair<int,int>, pair<int,int> > > matches;	
+
+	CImg<double> gray1 = img1.get_RGBtoHSI().get_channel(2);
+	vector<SiftDescriptor> descriptors_1 = Sift::compute_sift(gray1);
+
+	CImg<double> gray2 = img2.get_RGBtoHSI().get_channel(2);
+	vector<SiftDescriptor> descriptors_2 = Sift::compute_sift(gray2);
+
+	vector<vector<int> > flag_matrix(descriptors_1.size(), vector<int>(descriptors_2.size(), 0));
+	int best_match_index;
+	int best_match_value, second_best_match_value;
+	
+	for(int i = 0; i < descriptors_1.size(); i++)
+	{
+		best_match_value = threshold1*threshold1;
+		second_best_match_value = threshold1*threshold1;
+		best_match_index = -1;			
+
+		for(int j = 0; j < descriptors_2.size(); j++)
+		{
+			int distance = 0;
+			for(int l = 0; l < 128; l++)
+			{
+				int d;
+				d = descriptors_1[i].descriptor[l] - descriptors_2[j].descriptor[l];				
+				distance += d * d;
+
+				if (distance > second_best_match_value)
+					break;
+			}			
+
+			if (distance < best_match_value)
+			{
+				if (best_match_index != -1)				
+					second_best_match_value = best_match_value;									
+
+				best_match_value = distance;
+				best_match_index = j;
+				
+			}
+			else if (distance < second_best_match_value)
+			{
+				second_best_match_value = distance;				
+			}
+		}
+
+		if (best_match_index != -1)
+		{
+			if (10 * 10 * best_match_value < threshold2 * threshold2 * second_best_match_value)
+			{
+				flag_matrix[i][best_match_index] = 1;						
+			}
+		}
+	}
+
+
+	for(int i = 0; i < descriptors_2.size(); i++)
+	{
+		best_match_value = threshold1*threshold1;		
+		best_match_index = -1;			
+
+		for(int j = 0; j < descriptors_1.size(); j++)
+		{
+			if (flag_matrix[j][i] == 0)
+				continue;
+
+			int distance = 0;
+			for(int l = 0; l < 128; l++)
+			{
+				int d;
+				d = descriptors_2[i].descriptor[l] - descriptors_1[j].descriptor[l];
+				distance += d * d;
+			}			
+
+			if (distance < best_match_value)
+			{				
+				best_match_value = distance;
+				best_match_index = j;
+			}
+		}
+
+		if (best_match_index != -1)
+		{
+			int x1, y1, x2, y2;
+			x1 = descriptors_1[best_match_index].col;
+			y1 = descriptors_1[best_match_index].row;
+			x2 = descriptors_2[i].col;
+			y2 = descriptors_2[i].row;
+
+			matches.push_back(make_pair(make_pair(x1,y1),make_pair(x2,y2)));
+		}
+	}
+	
+	CImg<unsigned char> image3(img1.width()+img2.width(), max(img1.height(), img2.height()), 1, 3, 0);
+	for (int x = 0; x < img1.width(); ++x)
+		for (int y = 0; y < img1.height(); ++y)
+			for(int p=0; p<3; p++)
+				image3(x, y, 0, p) = img1(x, y, 0, p);
+
+	for (int x = 0; x < img2.width(); ++x)
+		for (int y = 0; y < img2.height(); ++y)
+			for(int p=0; p<3; p++)
+				image3(x+img1.width(), y, 0, p) = img2(x, y, 0, p);
+	
+	const unsigned char color[] = { 255, 255, 0};
+	for (int i = 0; i < matches.size(); ++i)
+	{
+		counter++;
+ 		image3.draw_line(matches[i].first.first, matches[i].first.second, matches[i].second.first+img1.width(), matches[i].second.second, color);
+	}
+	if(question == 1){
+	image3.save("part1_normal.png");
+	cout << "The merged image has been saved as part1_normal.png in the root folder" << endl;
+	}
+	return counter;
+}
+
+bool sort_vectors(pair<string, int> p1, pair<string, int> p2)
+{	try{
+       if(p1.second <= p2.second) return false; 
+       else return true;
+       }
+    catch(const string &err) {
+    	cerr << "Error: " << err << endl;
+    	cout << "Oops! Don't know what went wrong";
+    }
+}
+
+//This function is to sort the images with maximum matching points and to find the precision
+
+void maximum_key_points(int argc, char** argv, CImg<double> input_image, string inputFile, int user_input){
+    vector<Pair> pair(argc-3);
+    int limit_for_comparison = 10;
+    int correct_prediction = 0;
+    int false_prediction = 0;
+	int num_key_points;
+	for(int counter = 3 ; counter < argc; counter++)
+	{
+			CImg<double> img2(string(argv[counter]).c_str());
+			num_key_points = SIFT_match(input_image,img2, 9.0, user_input);
+			pair.push_back(make_pair(string(argv[counter]).c_str(),num_key_points));
+			cout << num_key_points << " feature points matched with source file "<< inputFile << " and target file " << argv[counter] << endl;
+	}
+	
+	sort(pair.begin(), pair.end(), sort_vectors);
+
+	
+	if(user_input == 2){
+	cout << "-------------------------------------------------------------------------------------------------------" << endl;
+		for(int i = 0; i < pair.size() ; i++)
+		{
+			if(!pair[i].first.empty())
+	     	cout << pair[i].first << " has " << pair[i].second << " feature point matches with " << inputFile << endl;
+		}
+	cout << "-------------------------------------------------------------------------------------------------------" << endl;
+	}
+	
+	else if(user_input == 3){
+		cout << "Entered userinput3"<< endl;
+		cout << "-------------------------------------------------------------------------------------------------------" << endl;
+		cout << "				Top 10 matches for" << inputFile << "								" << endl;
+		cout << "-------------------------------------------------------------------------------------------------------" << endl;
+		
+		for(int i = 0; i < limit_for_comparison ; i++){
+			cout << pair[i].first << " has " << pair[i].second << " feature point matches with " << inputFile << endl;
+		}
+		cout << "-------------------------------------------------------------------------------------------------------" << endl;
+		cout << "				Precision calculation for " << inputFile << "						" << endl;
+		cout << "-------------------------------------------------------------------------------------------------------" << endl;
+		
+		for(int i = 0; i < limit_for_comparison ; i++){
+			size_t index = inputFile.find_last_of("_"); 
+			string just_name = inputFile.substr(0, index);
+
+			if (pair[i].first.find(just_name) != std::string::npos) {
+    			correct_prediction+=1;
+			}
+			else{
+				false_prediction+=1;
+			}
+			if(!pair[i].first.empty())
+			cout << pair[i].first << " has " << pair[i].second << " feature point matches with " << inputFile << endl;
+		}
+		
+		float prec = ((correct_prediction * 1.0) / (correct_prediction + false_prediction) * 100.0) ;
+		cout << "-------------------------------------------------------------------------------------------------------" << endl;
+		cout << "					 The precision is " << prec << "%						"<< endl ;
+		cout << "-------------------------------------------------------------------------------------------------------" << endl;
+	
+	}
+}
+
+double gaussrand()
+{
+    static double V1, V2, S;
+    static int phase = 0;
+    double X;
+    if ( phase == 0 ) {
+        do {
+            double U1 = (double)rand() / RAND_MAX;
+            double U2 = (double)rand() / RAND_MAX;
+            V1 = 2 * U1 - 1;
+            V2 = 2 * U2 - 1;
+            S = V1 * V1 + V2 * V2;
+        } while(S >= 1 || S == 0);
+        X = V1 * sqrt(-2 * log(S) / S);
+    } else
+        X = V2 * sqrt(-2 * log(S) / S);
+    phase = 1 - phase;
+    return X;
+}
+
+vector<double> SIFT_summary(vector< vector<double> > x,vector<float> v, int k, double w)
+{
+    vector<double> output;
+    for(int i=0;i<k;i++)
+        {
+        double summary = 0.0;
+        for(int j=0;j<128;j++)
+            summary +=x[i][j]*v[j];
+        output.push_back(summary/w);
+        }
+    return output;
+}
+
+int SIFT_summary_match(CImg<double> img1, CImg<double> img2, int k, int w)
+{
+	int output = 0;
+    int candis = 10;
+    vector< vector<double> > x;
+    for(int i=0;i<k;i++)
+        {
+        vector<double> y;
+        for(int j=0;j<128;j++)
+            y.push_back(gaussrand());
+        x.push_back(y);
+        }   
+	CImg<double> gray_img1 = img1.get_RGBtoHSI().get_channel(2);
+	vector<SiftDescriptor> descriptors_1 = Sift::compute_sift(gray_img1);
+	CImg<double> gray_img2 = img2.get_RGBtoHSI().get_channel(2);
+	vector<SiftDescriptor> descriptors_2 = Sift::compute_sift(gray_img2);
+    vector<vector<double> > img1_summary, img2_summary;
+    for(int i=0; i<descriptors_1.size();i++)
+    {
+        vector<double> summary = SIFT_summary(x, descriptors_1[i].descriptor, k, w);
+        img1_summary.push_back(summary);
+    }  
+    for(int i=0; i<descriptors_2.size();i++)
+    {   vector<double> summary = SIFT_summary(x, descriptors_2[i].descriptor, k, w);
+        img2_summary.push_back(summary);
+    }
+    vector<vector<double> > distance;
+    for(int i=0; i<descriptors_1.size(); i++)
+    {
+        vector<double> one_row_dis;
+        for(int j=0; j<descriptors_2.size(); j++)
+        {
+            int dis = 0;
+            for(int kk=0; kk<k; kk++)
+                { 
+                    double a = img1_summary[i][kk]-img2_summary[j][kk];
+                    dis += sqrt(a*a);
+                }
+            one_row_dis.push_back(dis);
+        }
+        distance.push_back(one_row_dis);
+    }
+
+    vector<int> closests;
+    for(int i=0; i<distance.size();i++)
+    {
+        double closest = 10000000;
+        double second =  10000000;
+        int n1, n2;
+        for(int j=0; j<distance[0].size();j++)
+        {
+            if(distance[i][j]<second)
+            {
+                if(distance[i][j]<closest)
+                {
+                second = closest;
+                closest = distance[i][j];
+                n2 = n1;
+                n1 = j;
+                }
+                else
+                {
+                second = distance[i][j];
+                n2 = j;
+                }
+            }
+        }
+        closests.push_back(n1);
+        closests.push_back(n2);
+     } 
+    char color[]  = {0,255,0};
+    int height = img1.height();
+    if(img1.height()<img2.height())
+        height = img2.height();
+
+	CImg<double> img3(img1.width()+img2.width(), height,1,3,0);
+    for(int i=0; i<img1.width(); i++)
+    for(int j=0; j<img1.height(); j++)
+    for(int k=0; k<3; k++)
+    {
+    img3(i,j,0,k) = img1(i,j,0,k);
+    }
+    for(int i=0; i<img2.width(); i++)
+    for(int j=0; j<img2.height(); j++)
+    for(int k=0; k<3; k++)
+    img3(i+img1.width(),j,0,k) = img2(i,j,0,k);
+    for(int i=0; i<descriptors_1.size(); i++)
+        {
+            double e_dis1=0, e_dis2=0;
+            for(int j=0;j<128;j++)
+                {
+
+                    double a = descriptors_1[i].descriptor[j] - descriptors_2[closests[i*2]].descriptor[j];
+                    e_dis1 += sqrt(a*a);
+                    
+                    double b = descriptors_1[i].descriptor[j] - descriptors_2[closests[i*2+1]].descriptor[j];
+                    e_dis2 += sqrt(b*b);
+                } 
+            double ratio = e_dis1/e_dis2;              
+            int index = closests[i*2];
+            if(e_dis2<e_dis1)
+                {
+                ratio = e_dis2/e_dis1;
+                index = closests[i*2+1];
+                }
+            if(ratio<0.4)       
+            {
+        img3.draw_line(descriptors_1[i].col,descriptors_1[i].row,descriptors_2[index].col+img1.width(),descriptors_2[index].row,color,1);
+        output++;
+        }
+        }      
+	img3.save("part1_fast.png");
+	cout << "The merged image has been saved as part1_fast.png in the root folder" << endl;
+	return output;
+}
+
+
 
 int main(int argc, char **argv)
 {
-	try 
-	{
-		if(argc < 4)
-		{
-			cout << "Insufficent number of arguments; correct usage:" << endl;
-			cout << "    a2-p1 part_id ..." << endl;
-			return -1;
+  try {
+  
+    if(argc < 2)
+    {
+	cout << "Insufficent number of arguments; correct usage:" << endl;
+	cout << "    a2-p1 part_id ..." << endl;
+	return -1;
+    }
+     
+     //Initializing the variables
+     
+     string part = argv[1];
+     string inputFile = argv[2];
+     string inputFile_2 = argv[3];
+     int user_input;
+     int part1_question;
+     CImg<double> input_image(inputFile.c_str());
+	 CImg<double> input_image_2(inputFile_2.c_str());  
+
+    if(part == "part1")
+    {
+		//Part 1 contains the solution for all the part1 questions.
+		cout << "You have entered part 1. Please Enter for which question you need to find the solution" << endl;
+		cout <<"The options are as below, " << endl << "1. Press 1 for Question 1" << endl << "2. Press 2 for Question 2" << endl << "3. Press 3 for Question 3" << endl;
+		cin >> part1_question;
+	
+		if(part1_question == 1){
+    		int match_numbers = SIFT_match(input_image, input_image_2, 9.0, part1_question);
+    	}
+    
+    	if(part1_question == 2 || part1_question == 3){
+			maximum_key_points(argc, argv, input_image, inputFile, part1_question);
 		}
-
-		string part = argv[1];
-		string inputFile = argv[2];
-		
-		if(part == "part1")
-		{			
-			string inputfile2 = argv[3];
-
-			CImg<double> input_image(inputFile.c_str());
-
-			// convert image to grayscale
-			CImg<double> gray = input_image.get_RGBtoHSI().get_channel(2);
-			vector<SiftDescriptor> descriptors = Sift::compute_sift(gray);
-			
-			cout <<"Desc size"<< descriptors.size();
-			cout << "desc 1" << descriptors[1].descriptor[1];
-			cout << endl;
-			cout << endl;
-			for(int i=0; i<descriptors.size(); i++)
-			{
-				cout << "Descriptor #" << i << ": x=" << descriptors[i].col << " y=" << descriptors[i].row << " descriptor=(";
-				for(int l=0; l<128; l++)
-					cout << descriptors[i].descriptor[l] << "," ;
-				cout << ")" << endl;
-
-				for(int j=0; j<5; j++)
-					for(int k=0; k<5; k++)
-						if(j==2 || k==2)
-							for(int p=0; p<3; p++)								
-			                    if(descriptors[i].col+k < input_image.width() && descriptors[i].row+j < input_image.height())
-            				        input_image(descriptors[i].col+k, descriptors[i].row+j, 0, p) = 0;
-
-			}
-			input_image.get_normalize(0,255).save("sift.png");
-			
-			CImg<double> input_image1(inputfile2.c_str());
-			// convert image to grayscale
-			CImg<double> gray1 = input_image1.get_RGBtoHSI().get_channel(2);
-			vector<SiftDescriptor> descriptors1 = Sift::compute_sift(gray1);
-			
-			cout <<"Desc size"<< descriptors1.size();
-			cout << "desc 1" << descriptors1[1].descriptor[1];
-			cout << endl;
-			cout << endl;
-			for(int i = 0; i < descriptors1.size(); i++)
-			{
-				cout << "Descriptor #" << i << ": x=" << descriptors1[i].col << " y=" << descriptors1[i].row << " descriptor=(";
-				for(int l=0; l<128; l++)
-					cout << descriptors1[i].descriptor[l] << "," ;
-				cout << ")" << endl;
-
-				for(int j=0; j<5; j++)
-					for(int k=0; k<5; k++)
-						if(j==2 || k==2)
-							for(int p=0; p<3; p++)								
-			                    if(descriptors1[i].col+k < input_image1.width() && descriptors1[i].row+j < input_image1.height())
-            				        input_image1(descriptors[i].col+k, descriptors[i].row+j, 0, p) = 0;
-
-			}
-			input_image1.get_normalize(0,255).save("sift1.png");
-			
-		}
-		else if(part == "part2")
-		{
-			CImg<unsigned char> image1(argv[2]);
+	
+    }
+    
+    else if(part == "part1fast"){
+    
+    //part1fast will contain the solution for 4th question.
+    int thresh_fast = 10;
+    int thresh_fast1 = 260;
+    int match_numbers = SIFT_summary_match(input_image, input_image_2, thresh_fast, thresh_fast1);
+    cout << "The total number of matching points are : " << match_numbers;
+    }
+    
+    
+    else if(part == "part2")
+      {
+		CImg<unsigned char> image1(argv[2]);
 
 			for (int i = 3; i < argc; ++i)
 			{
@@ -396,14 +721,22 @@ int main(int argc, char **argv)
 				cout << "Generated panorama image: " << output_name << endl;
 				cout << endl;
 			}
-			
-		}		
-		else
-			throw std::string("unknown part!");
+      }
+    else
+      throw std::string("unknown part!");
 
-	}
-	catch(const string &err)
-	{
-		cerr << "Error: " << err << endl;
-	}
+    // feel free to add more conditions for other parts (e.g. more specific)
+    //  parts, for debugging, etc.
+  }
+  catch(const string &err) {
+    cerr << "Error: " << err << endl;
+  }
 }
+
+
+
+
+
+
+
+
