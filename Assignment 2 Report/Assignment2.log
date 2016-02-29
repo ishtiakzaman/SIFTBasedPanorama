@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.5.24)  28 FEB 2016 21:23
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.5.24)  28 FEB 2016 21:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**Assignment1.tex
-(./Assignment1.tex
+**Assignment2.tex
+(./Assignment2.tex
 LaTeX2e <2015/01/01>
 Babel <3.9l> and hyphenation patterns for 79 languages loaded.
 (/usr/local/texlive/2015/texmf-dist/tex/latex/base/article.cls
@@ -474,8 +474,8 @@ Package: array 2014/10/28 v2.4c Tabular extension package (FMi)
 \TX@cols=\count127
 \TX@ftn=\toks40
 )
-(./Assignment1.aux)
-\openout1 = `Assignment1.aux'.
+(./Assignment2.aux)
+\openout1 = `Assignment2.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 44.
 LaTeX Font Info:    ... okay on input line 44.
@@ -601,67 +601,67 @@ Overfull \hbox (10.49696pt too wide) in paragraph at lines 193--193
 File: Images/21.png Graphic file (type png)
 
 <use Images/21.png>
-Package pdftex.def Info: Images/21.png used on input line 209.
+Package pdftex.def Info: Images/21.png used on input line 208.
 (pdftex.def)             Requested size: 213.39044pt x 113.80365pt.
  <Images/212.png, id=33, 1027.84pt x 683.55376pt>
 File: Images/212.png Graphic file (type png)
 
 <use Images/212.png>
-Package pdftex.def Info: Images/212.png used on input line 209.
+Package pdftex.def Info: Images/212.png used on input line 208.
 (pdftex.def)             Requested size: 213.39044pt x 113.80365pt.
  [4 <./Images/3a.png> <./Images/21.png> <./Images/212.png>] <Images/111a.jpg, i
 d=37, 160.6pt x 120.45pt>
 File: Images/111a.jpg Graphic file (type jpg)
  <use Images/111a.jpg>
-Package pdftex.def Info: Images/111a.jpg used on input line 222.
+Package pdftex.def Info: Images/111a.jpg used on input line 221.
 (pdftex.def)             Requested size: 142.26698pt x 113.8148pt.
 
 <Images/111b.jpg, id=38, 642.4pt x 432.61626pt>
 File: Images/111b.jpg Graphic file (type jpg)
  <use Images/111b.jpg>
-Package pdftex.def Info: Images/111b.jpg used on input line 222.
+Package pdftex.def Info: Images/111b.jpg used on input line 221.
 (pdftex.def)             Requested size: 142.25964pt x 113.811pt.
 
 <Images/111c.jpg, id=39, 835.12pt x 612.2875pt>
 File: Images/111c.jpg Graphic file (type jpg)
  <use Images/111c.jpg>
-Package pdftex.def Info: Images/111c.jpg used on input line 223.
+Package pdftex.def Info: Images/111c.jpg used on input line 222.
 (pdftex.def)             Requested size: 142.2616pt x 113.80394pt.
 
 <Images/222a.jpg, id=40, 642.4pt x 430.60875pt>
 File: Images/222a.jpg Graphic file (type jpg)
  <use Images/222a.jpg>
-Package pdftex.def Info: Images/222a.jpg used on input line 227.
+Package pdftex.def Info: Images/222a.jpg used on input line 226.
 (pdftex.def)             Requested size: 142.25964pt x 113.80852pt.
 
 <Images/222b.jpg, id=41, 642.4pt x 412.54124pt>
 File: Images/222b.jpg Graphic file (type jpg)
  <use Images/222b.jpg>
-Package pdftex.def Info: Images/222b.jpg used on input line 227.
+Package pdftex.def Info: Images/222b.jpg used on input line 226.
 (pdftex.def)             Requested size: 142.25964pt x 113.81114pt.
 
 <Images/222c.jpg, id=42, 987.69pt x 559.08875pt>
 File: Images/222c.jpg Graphic file (type jpg)
  <use Images/222c.jpg>
-Package pdftex.def Info: Images/222c.jpg used on input line 228.
+Package pdftex.def Info: Images/222c.jpg used on input line 227.
 (pdftex.def)             Requested size: 142.25438pt x 113.80348pt.
 
 <Images/333a.jpg, id=43, 160.6pt x 120.45pt>
 File: Images/333a.jpg Graphic file (type jpg)
  <use Images/333a.jpg>
-Package pdftex.def Info: Images/333a.jpg used on input line 238.
+Package pdftex.def Info: Images/333a.jpg used on input line 237.
 (pdftex.def)             Requested size: 213.4017pt x 199.18787pt.
 
 <Images/333b.jpg, id=44, 322.95656pt x 481.8pt>
 File: Images/333b.jpg Graphic file (type jpg)
  <use Images/333b.jpg>
-Package pdftex.def Info: Images/333b.jpg used on input line 238.
+Package pdftex.def Info: Images/333b.jpg used on input line 237.
 (pdftex.def)             Requested size: 213.39345pt x 199.16399pt.
 
 <Images/333c.jpg, id=45, 643.40375pt x 770.88pt>
 File: Images/333c.jpg Graphic file (type jpg)
  <use Images/333c.jpg>
-Package pdftex.def Info: Images/333c.jpg used on input line 240.
+Package pdftex.def Info: Images/333c.jpg used on input line 239.
 (pdftex.def)             Requested size: 199.16838pt x 199.16547pt.
  [5 <./Images/111a.jpg> <./Images/111b.jpg> <./Images/111c.jpg> <./Images/222a.
 jpg> <./Images/222b.jpg> <./Images/222c.jpg> <./Images/333a.jpg> <./Images/333b
@@ -669,31 +669,31 @@ jpg> <./Images/222b.jpg> <./Images/222c.jpg> <./Images/333a.jpg> <./Images/333b
 <Images/444a.jpg, id=49, 501.875pt x 376.40625pt>
 File: Images/444a.jpg Graphic file (type jpg)
  <use Images/444a.jpg>
-Package pdftex.def Info: Images/444a.jpg used on input line 244.
+Package pdftex.def Info: Images/444a.jpg used on input line 243.
 (pdftex.def)             Requested size: 213.39743pt x 199.17271pt.
 
 <Images/444b.jpg, id=50, 501.875pt x 376.40625pt>
 File: Images/444b.jpg Graphic file (type jpg)
  <use Images/444b.jpg>
-Package pdftex.def Info: Images/444b.jpg used on input line 244.
+Package pdftex.def Info: Images/444b.jpg used on input line 243.
 (pdftex.def)             Requested size: 213.39743pt x 199.17271pt.
 
 <Images/444c.png, id=51, 532.99126pt x 400.49625pt>
 File: Images/444c.png Graphic file (type png)
  <use Images/444c.png>
-Package pdftex.def Info: Images/444c.png used on input line 246.
+Package pdftex.def Info: Images/444c.png used on input line 245.
 (pdftex.def)             Requested size: 199.16368pt x 199.17207pt.
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 256.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 252.
 
 
 (/usr/local/texlive/2015/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 256.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 252.
  [6 <./Images/333c.jpg> <./Images/444a.jpg> <./Images/444b.jpg> <./Images/444c.
 png>] [7]
-(./Assignment1.aux) ) 
+(./Assignment2.aux) ) 
 Here is how much of TeX's memory you used:
  12945 strings out of 493089
  251820 string characters out of 6134842
@@ -713,7 +713,7 @@ cm/cmr12.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm
 /cmr17.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/c
 msy10.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cm
 ti10.pfb>
-Output written on Assignment1.pdf (7 pages, 7486163 bytes).
+Output written on Assignment2.pdf (7 pages, 7486010 bytes).
 PDF statistics:
  92 PDF objects out of 1000 (max. 8388607)
  52 compressed objects within 1 object stream
