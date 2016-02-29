@@ -471,7 +471,7 @@ void maximum_key_points(int argc, char** argv, CImg<double> input_image, string 
 	else if(user_input == 3){
 		cout << "Entered userinput3"<< endl;
 		cout << "-------------------------------------------------------------------------------------------------------" << endl;
-		cout << "				Top 10 matches for" << inputFile << "								" << endl;
+		cout << "				Top 10 matches for " << inputFile << "								" << endl;
 		cout << "-------------------------------------------------------------------------------------------------------" << endl;
 		
 		for(int i = 0; i < limit_for_comparison ; i++){
