@@ -1,1 +1,2 @@
-# a2
+# SIFT Based Panorama
+See **Report.pdf** for details.
